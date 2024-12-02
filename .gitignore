@@ -1,0 +1,5 @@
+figures/*
+__pycache__/*
+*.ipynb 
+*.zip
+.DS_Store
