@@ -10,7 +10,7 @@ from setup import model_parameters, weights, exp_weights_reset, colour_naming_ex
 from EmotionalGrain import colors_input_layer, words_input_layer, task_input_layer, emotion_input_layer, task_layer
 from EmotionalGrain import colors_hidden_layer, words_hidden_layer, emotion_hidden_layer, response_layer 
 from EmotionalGrain import color_input_weights, word_input_weights, emotion_input_weights, task_input_weights
-from EmotionalGrain import color_task_weights, task_color_weights, word_task_weights, emotion_task_weights, task_emotion_weights 
+from EmotionalGrain import color_task_weights, task_color_weights, task_word_weights, word_task_weights, emotion_task_weights, task_emotion_weights 
 from EmotionalGrain import response_color_weights, response_word_weights, response_emotion_weights, color_response_weights, word_response_weights 
 from EmotionalGrain import emotion_response_weights, color_response_process_1, color_response_process_2, word_response_process_1, word_response_process_2
 from EmotionalGrain import emotion_response_process_1, emotion_response_process_2, task_color_response_process_1, task_color_response_process_2
@@ -102,7 +102,7 @@ class optimize_stroop(object):
                  counterbalance,
                  participant,
                  pop_size = 10,
-                 max_evaluations = 120,
+                 max_evaluations = 150,
                  num_selected = 10, 
                  mutation_rate = 0.02,
                 ):
@@ -117,7 +117,7 @@ class optimize_stroop(object):
         self.flag = str('pt-') + str(self.participant[0]) + str('_cb-') + str(self.counterbalance[0])
         self.minParamValues = []
         self.maxParamValues = []
-        self.num_inputs = 7
+        self.num_inputs = 9
         self.initialParams = []
         #self.param = [colour_naming_exp['response_colour'][0,0], #baseline 1.5
         #              colour_naming_exp['response_word'][0,0], #baseline 2.5
@@ -166,7 +166,9 @@ class optimize_stroop(object):
                 task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain']), Bidirectional_Stroop)
                 task_layer.parameters.hetero.set(model_parameters['task_layer']['inhibition'], Bidirectional_Stroop)
                 task_layer.parameters.integration_rate.set(model_parameters['task_layer']['rate'], Bidirectional_Stroop)
-
+                task_color_weights.parameters.matrix.set(weights['task_colour'], Bidirectional_Stroop)
+                task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
+                task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
 
                 #run baseline
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][0], num_trials=settle_trials)
@@ -182,6 +184,9 @@ class optimize_stroop(object):
                 weights['colour_response'][1,1] = cand[2]
                 weights['word_response'][0,0] = cand[3]
                 weights['word_response'][1,1] = cand[3]
+                weights['task_colour'][0,:] = cand[7]
+                weights['task_word'][1,:] = cand[7]
+                weights['task_emotion'][2,:] = cand[8]
 
                 response_color_weights.parameters.matrix.set(colour_naming_exp['response_colour'], Bidirectional_Stroop)
                 response_word_weights.parameters.matrix.set(colour_naming_exp['response_word'], Bidirectional_Stroop)
@@ -192,6 +197,11 @@ class optimize_stroop(object):
                 task_layer.parameters.function.set(pnl.Logistic(gain = cand[4]), Bidirectional_Stroop)
                 task_layer.parameters.hetero.set(cand[5], Bidirectional_Stroop)
                 task_layer.parameters.integration_rate.set(cand[6], Bidirectional_Stroop)
+                task_color_weights.parameters.matrix.set(weights['task_colour'], Bidirectional_Stroop)
+                task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
+                task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
+
+
                 #run exp
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][1], termination_processing=terminate_trial)
 
@@ -250,8 +260,11 @@ class optimize_stroop(object):
                             weights['colour_response'][0,0] * 0.75,
                             weights['word_response'][0,0] * 0.75,
                             model_parameters['task_layer']['gain'] * 0.5,
-                            model_parameters['task_layer']['inhibition'] * 0.75 ,
-                            model_parameters['task_layer']['rate'] * 0.5,
+                            model_parameters['task_layer']['inhibition'] * 0.5 ,
+                            model_parameters['task_layer']['rate'] * 0.75,
+                            weights['task_colour'][0,0] * 0.78,
+                            #weights['task_word'][1,0] * 0.9,
+                            weights['task_emotion'][2,0] * 0.9
                             ]
         
 
@@ -262,6 +275,9 @@ class optimize_stroop(object):
                             model_parameters['task_layer']['gain'] * 8,
                             model_parameters['task_layer']['inhibition'] * 1.5,
                             model_parameters['task_layer']['rate'] * 1.5,
+                            weights['task_colour'][0,0] * 1.2,
+                            #weights['task_word'][1,0] * 1.8,
+                            weights['task_emotion'][2,0] * 1.5
                             ]
 
 
@@ -315,6 +331,10 @@ class optimize_stroop(object):
                 task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain']), Bidirectional_Stroop)
                 task_layer.parameters.hetero.set(model_parameters['task_layer']['inhibition'], Bidirectional_Stroop)
                 task_layer.parameters.integration_rate.set(model_parameters['task_layer']['rate'], Bidirectional_Stroop)
+                task_color_weights.parameters.matrix.set(weights['task_colour'], Bidirectional_Stroop)
+                task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
+                task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
+
                 #run baseline
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][0], num_trials=settle_trials)
 
@@ -329,6 +349,9 @@ class optimize_stroop(object):
                 weights['colour_response'][1,1] = optparams[2]
                 weights['word_response'][0,0] = optparams[3]
                 weights['word_response'][1,1] = optparams[3]
+                weights['task_colour'][0,:] = optparams[7]
+                weights['task_word'][1,:] = optparams[7]
+                weights['task_emotion'][2,:] = optparams[8]
 
                 response_color_weights.parameters.matrix.set(colour_naming_exp['response_colour'], Bidirectional_Stroop)
                 response_word_weights.parameters.matrix.set(colour_naming_exp['response_word'], Bidirectional_Stroop)
@@ -339,6 +362,10 @@ class optimize_stroop(object):
                 task_layer.parameters.function.set(pnl.Logistic(gain = optparams[4]), Bidirectional_Stroop)
                 task_layer.parameters.hetero.set(optparams[5], Bidirectional_Stroop)
                 task_layer.parameters.integration_rate.set(optparams[6], Bidirectional_Stroop)
+                task_color_weights.parameters.matrix.set(weights['task_colour'], Bidirectional_Stroop)
+                task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
+                task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
+
                 #run exp
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][1], termination_processing=terminate_trial)
 
@@ -365,7 +392,8 @@ class optimize_stroop(object):
                 task_layer.reset([[0, 0, 0]]) # NOTE: again, 3 nodes now
 
         colnames = ['pid', 'cb', 'rrs', 'incongruent_data', 'congruent_data', 'incongruent_sim', 'congruent_sim']
-        param_names = ['response_colour', 'response_word', 'colour_response', 'word_response', 'task_gain', 'task_inhib', 'task_intg']
+        param_names = ['response_colour', 'response_word', 'colour_response', 'word_response', 'task_gain', 'task_inhib', 'task_intg', 
+                       'task_colour', 'task_emotion'] #'task_word',
         columns = colnames + param_names
 
         #assemble stuff 
@@ -401,9 +429,14 @@ class optimize_stroop(object):
 
         # Displaying the plot
         fig.savefig('figures/op-output/participant_%s.png' % self.flag)
+        plt.close(fig)
 
 
+#n_test = 5
+#for p in range(73,n_participants):
+    #optimize_stroop(standard, 1, p)
 
-for p in range(0,n_participants):
-    optimize_stroop(standard, 1, p)
-     
+
+failed_to_converge = [24] #26, 29, 39, 41, 43, 46, 48, 49, 51, 55, 56, 65, 75] #3, 19 
+for p in failed_to_converge:
+    optimize_stroop(standard, 1, p, max_evaluations= 300, mutation_rate= 0.03)
