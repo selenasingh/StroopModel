@@ -20,7 +20,7 @@ from EmotionalGrain import Bidirectional_Stroop
 #PARAMETER FITTING TO PARTICIPANT DATA
 
 # import data
-standard = pd.read_csv("data/compiled_1.csv")
+standard = pd.read_csv("data/compiled_1.csv") #cb 1: immediately after rumination, cb2: w delay 
 n_participants = len(standard['prolific_ID'])
 
 # ------------------------------MODELLING-----------------------------------------------------------
@@ -71,7 +71,7 @@ def trial_dict(red_color, green_color, neutral_color, red_word, green_word, neut
 
 # Define initialization trials separately
 # order: red_color, green_color, neutral_color, red_word, green_word, neutral_word, positive_emotion, negative_emotion, neutral_emotion, CN, WR, EP
-CN_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+CN_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1)
 WR_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
 EP_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
 
@@ -114,10 +114,10 @@ class optimize_stroop(object):
         self.num_selected = num_selected
         self.mutation_rate = mutation_rate
         self.num_elites = 1
-        self.flag = str('pt-') + str(self.participant[0]) + str('_cb-') + str(self.counterbalance[0])
+        self.flag = str('pt-') + str(self.participant[0]) + str('_cb-') + str(self.counterbalance[0]) + '-emw'
         self.minParamValues = []
         self.maxParamValues = []
-        self.num_inputs = 9
+        self.num_inputs = 13
         self.initialParams = []
         #self.param = [colour_naming_exp['response_colour'][0,0], #baseline 1.5
         #              colour_naming_exp['response_word'][0,0], #baseline 2.5
@@ -163,14 +163,16 @@ class optimize_stroop(object):
                 color_response_weights.parameters.matrix.set(weights['colour_response'], Bidirectional_Stroop)
                 word_response_weights.parameters.matrix.set(weights['word_response'], Bidirectional_Stroop)
                 emotion_response_weights.parameters.matrix.set(weights['emotion_response'], Bidirectional_Stroop)
-                task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain']), Bidirectional_Stroop)
-                task_layer.parameters.hetero.set(model_parameters['task_layer']['inhibition'], Bidirectional_Stroop)
+                task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain'],
+                                                                x_0 = model_parameters['task_layer']['bias']), Bidirectional_Stroop)
                 task_layer.parameters.integration_rate.set(model_parameters['task_layer']['rate'], Bidirectional_Stroop)
-                task_layer.parameters.function.set(pnl.Logistic(x_0 = model_parameters['task_layer']['bias']), Bidirectional_Stroop)
                 task_color_weights.parameters.matrix.set(weights['task_colour'], Bidirectional_Stroop)
                 task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
-                #task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
-
+                task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
+                emotion_task_weights.parameters.matrix.set(weights['emotion_task'], Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['emotion_hidden']['gain'], 
+                                                                          x_0 = model_parameters['emotion_hidden']['bias']), Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.integration_rate.set(model_parameters['emotion_hidden']['rate'], Bidirectional_Stroop)
                 #run baseline
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][0], num_trials=settle_trials)
 
@@ -187,7 +189,8 @@ class optimize_stroop(object):
                 weights['word_response'][1,1] = cand[3]
                 weights['task_colour'][0,:] = cand[4]
                 weights['task_word'][1,:] = cand[4]
-                #weights['task_emotion'][2,:] = cand[8]
+                weights['task_emotion'][2,:] = cand[5] #added for counterbalance 2
+                weights['emotion_task'][:,2] = cand[6]
 
                 response_color_weights.parameters.matrix.set(colour_naming_exp['response_colour'], Bidirectional_Stroop)
                 response_word_weights.parameters.matrix.set(colour_naming_exp['response_word'], Bidirectional_Stroop)
@@ -199,10 +202,12 @@ class optimize_stroop(object):
                 task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
                 task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
 
-                task_layer.parameters.function.set(pnl.Logistic(gain = cand[5]), Bidirectional_Stroop)
-                task_layer.parameters.hetero.set(cand[6], Bidirectional_Stroop)
-                task_layer.parameters.integration_rate.set(cand[7], Bidirectional_Stroop)
-                task_layer.parameters.function.set(pnl.Logistic(x_0 = cand[8]), Bidirectional_Stroop)
+                task_layer.parameters.function.set(pnl.Logistic(gain = cand[7],
+                                                                x_0 = cand[8]), Bidirectional_Stroop)
+                task_layer.parameters.integration_rate.set(cand[9], Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.function.set(pnl.Logistic(gain = cand[10], 
+                                                                          x_0 = cand[11]), Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.integration_rate.set(cand[12], Bidirectional_Stroop)
                 #run exp
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][1], termination_processing=terminate_trial)
 
@@ -258,29 +263,35 @@ class optimize_stroop(object):
 
         from setup import weights, model_parameters, colour_naming_exp
 
-        self.minParamValues = [colour_naming_exp['response_colour'][0,0] * 0.75, 
-                            colour_naming_exp['response_word'][0,0] * 0.75, 
-                            weights['colour_response'][0,0] * 0.75,
-                            weights['word_response'][0,0] * 0.75,
+        self.minParamValues = [colour_naming_exp['response_colour'][0,0] * 0.8, 
+                            colour_naming_exp['response_word'][0,0] * 0.8, 
+                            weights['colour_response'][0,0] * 0.8,
+                            weights['word_response'][0,0] * 0.8,
                             weights['task_colour'][0,0] * 0.78,
+                            weights['task_emotion'][2,0] * 0.15,
+                            weights['emotion_task'][0,2] *0.15,
                             model_parameters['task_layer']['gain'] * 0.1,
-                            model_parameters['task_layer']['inhibition'] * 0.5 ,
+                            model_parameters['task_layer']['bias'] * 1,
                             model_parameters['task_layer']['rate'] * 0.03,
-                            model_parameters['task_layer']['bias'], 
-                           #weights['task_emotion'][2,0] * 0.9
+                            model_parameters['emotion_hidden']['gain'] * 0.1,
+                            model_parameters['emotion_hidden']['bias'] * 1,
+                            model_parameters['emotion_hidden']['rate'] * 0.01
                             ]
         
 
-        self.maxParamValues= [colour_naming_exp['response_colour'][0,0] * 1.25, 
+        self.maxParamValues = [colour_naming_exp['response_colour'][0,0] * 1.25, 
                             colour_naming_exp['response_word'][0,0] * 2, 
                             weights['colour_response'][0,0] * 1.25,
                             weights['word_response'][0,0] * 2,
-                            weights['task_colour'][0,0] * 1.2,
+                            weights['task_colour'][0,0] * 1.25,
+                            weights['task_emotion'][2,0] * 0.75,
+                            weights['emotion_task'][0,2] * 1.25,
                             model_parameters['task_layer']['gain'] * 4,
-                            model_parameters['task_layer']['inhibition'] * 1.5,
+                            (model_parameters['task_layer']['bias'] + 1)* 2.1,
                             model_parameters['task_layer']['rate'] * 1.5,
-                            (model_parameters['task_layer']['bias'] + 1.0) * 2.1,
-                            #weights['task_emotion'][2,0] * 1.5
+                            model_parameters['emotion_hidden']['gain'] * 4,
+                            model_parameters['emotion_hidden']['bias'] * 1.5,
+                            model_parameters['emotion_hidden']['rate'] * 2.5
                             ]
 
 
@@ -331,14 +342,16 @@ class optimize_stroop(object):
                 color_response_weights.parameters.matrix.set(weights['colour_response'], Bidirectional_Stroop)
                 word_response_weights.parameters.matrix.set(weights['word_response'], Bidirectional_Stroop)
                 emotion_response_weights.parameters.matrix.set(weights['emotion_response'], Bidirectional_Stroop)
-                task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain']), Bidirectional_Stroop)
-                task_layer.parameters.hetero.set(model_parameters['task_layer']['inhibition'], Bidirectional_Stroop)
+                task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain'],
+                                                                x_0 = model_parameters['task_layer']['bias']), Bidirectional_Stroop)
                 task_layer.parameters.integration_rate.set(model_parameters['task_layer']['rate'], Bidirectional_Stroop)
-                task_layer.parameters.function.set(pnl.Logistic(x_0 = model_parameters['task_layer']['bias']), Bidirectional_Stroop)
                 task_color_weights.parameters.matrix.set(weights['task_colour'], Bidirectional_Stroop)
                 task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
-                #task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
-
+                task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
+                emotion_task_weights.parameters.matrix.set(weights['emotion_task'], Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['emotion_hidden']['gain'], 
+                                                                          x_0 = model_parameters['emotion_hidden']['bias']), Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.integration_rate.set(model_parameters['emotion_hidden']['rate'], Bidirectional_Stroop)
                 #run baseline
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][0], num_trials=settle_trials)
 
@@ -355,7 +368,8 @@ class optimize_stroop(object):
                 weights['word_response'][1,1] = optparams[3]
                 weights['task_colour'][0,:] = optparams[4]
                 weights['task_word'][1,:] = optparams[4]
-                #weights['task_emotion'][2,:] = cand[8]
+                weights['task_emotion'][2,:] = optparams[5] #added for counterbalance 2
+                weights['emotion_task'][:,2] = optparams[6]
 
                 response_color_weights.parameters.matrix.set(colour_naming_exp['response_colour'], Bidirectional_Stroop)
                 response_word_weights.parameters.matrix.set(colour_naming_exp['response_word'], Bidirectional_Stroop)
@@ -367,10 +381,12 @@ class optimize_stroop(object):
                 task_word_weights.parameters.matrix.set(weights['task_word'], Bidirectional_Stroop)
                 task_emotion_weights.parameters.matrix.set(weights['task_emotion'], Bidirectional_Stroop)
 
-                task_layer.parameters.function.set(pnl.Logistic(gain = optparams[5]), Bidirectional_Stroop)
-                task_layer.parameters.hetero.set(optparams[6], Bidirectional_Stroop)
-                task_layer.parameters.integration_rate.set(optparams[7], Bidirectional_Stroop)
-                task_layer.parameters.function.set(pnl.Logistic(x_0 = optparams[8]), Bidirectional_Stroop)
+                task_layer.parameters.function.set(pnl.Logistic(gain = optparams[7],
+                                                                x_0 = optparams[8]), Bidirectional_Stroop)
+                task_layer.parameters.integration_rate.set(optparams[9], Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.function.set(pnl.Logistic(gain = optparams[10], 
+                                                                          x_0 = optparams[11]), Bidirectional_Stroop)
+                emotion_hidden_layer.parameters.integration_rate.set(optparams[12], Bidirectional_Stroop)
                 #run exp
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][1], termination_processing=terminate_trial)
 
@@ -398,7 +414,8 @@ class optimize_stroop(object):
 
         colnames = ['pid', 'cb', 'rrs', 'incongruent_data', 'congruent_data', 'incongruent_sim', 'congruent_sim']
         param_names = ['response_colour', 'response_word', 'colour_response', 'word_response', 'task_colour_w', 
-                       'task_gain', 'task_inhib', 'task_intg', 'task_bias'
+                       'task_emotion_w', 'emotion_task_w', 'task_gain', 'task_bias', 'task_intg', 
+                        'emotion_gain', 'emotion_bias', 'emotion_intg' #'emotion_hidden_intg'
                        ] #'task_word',
         columns = colnames + param_names
 
@@ -439,11 +456,5 @@ class optimize_stroop(object):
 
 
 #n_test = 5
-#for p in range(73, 76):
-#    optimize_stroop(standard, 1, p, max_evaluations= 180)
-
-
-#failed_to_converge = [24] #26, 29, 39, 41, 43, 46, 48, 49, 51, 55, 56, 65, 75] #3, 19 
-#for p in failed_to_converge
-
-#optimize_stroop(standard, 1, 7, max_evaluations= 200, mutation_rate= 0.03)
+for p in range(0, n_participants):
+    optimize_stroop(standard, 1, p)
