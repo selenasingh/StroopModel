@@ -23,6 +23,7 @@ from EmotionalGrain import Bidirectional_Stroop
 standard = pd.read_csv("data/compiled_1.csv") #cb 1: immediately after rumination, cb2: w delay 
 n_participants = len(standard['prolific_ID'])
 
+standard_wdelay = pd.read_csv("data/compiled_2.csv")
 # ------------------------------MODELLING-----------------------------------------------------------
 """
 TODO: Clean this up somehow.
@@ -71,7 +72,7 @@ def trial_dict(red_color, green_color, neutral_color, red_word, green_word, neut
 
 # Define initialization trials separately
 # order: red_color, green_color, neutral_color, red_word, green_word, neutral_word, positive_emotion, negative_emotion, neutral_emotion, CN, WR, EP
-CN_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1)
+CN_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
 WR_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
 EP_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
 
@@ -114,7 +115,7 @@ class optimize_stroop(object):
         self.num_selected = num_selected
         self.mutation_rate = mutation_rate
         self.num_elites = 1
-        self.flag = str('pt-') + str(self.participant[0]) + str('_cb-') + str(self.counterbalance[0]) + '-emw'
+        self.flag = str('pt-') + str((self.participant[0]+76)) + str('_cb-') + str(self.counterbalance[0]) + '-emw'
         self.minParamValues = []
         self.maxParamValues = []
         self.num_inputs = 13
@@ -455,6 +456,6 @@ class optimize_stroop(object):
         plt.close(fig)
 
 
-#n_test = 5
-for p in range(0, n_participants):
-    optimize_stroop(standard, 1, p)
+
+for p in range(n_participants):
+    optimize_stroop(standard_wdelay, 2, p, max_evaluations=180)

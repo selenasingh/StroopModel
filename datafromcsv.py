@@ -36,7 +36,7 @@ class extractRT(object):
         self.final_data = pivoted_data.merge(pivoted_data_2, on='prolific_ID')
 
         # Adding the RRS_score column by grouping it to ensure unique values for each prolific_ID
-        rrs_scores = self.stroopdata[['prolific_ID', 'RRS_score', 'RRS_depression', 'RRS_brooding', 'RRS_reflection']].drop_duplicates()
+        rrs_scores = self.stroopdata[['prolific_ID', 'RRS_score', 'RRS_depression', 'RRS_brooding', 'RRS_reflection', 'sex', 'age']].drop_duplicates()
         self.final_data = self.final_data.merge(rrs_scores, on='prolific_ID')
         
         self.final_data.to_csv('data/compiled_%s.csv' % self.counterbalanced)
@@ -45,4 +45,4 @@ class extractRT(object):
     
 stroopdata = pd.read_csv('data/stroop_standard_trials_w_subscales.csv')  
 emotiondata = pd.read_csv('data/stroop_emotion_trials_w_subscales.csv')  
-extractRT(stroopdata, emotiondata, 2)
+extractRT(stroopdata, emotiondata, 1)
