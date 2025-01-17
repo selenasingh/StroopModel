@@ -1,7 +1,9 @@
 #run experiments 
 import argparse
 import numpy as np
+import pandas as pd
 import psyneulink as pnl
+
 import logging
 from EmotionalGrain import colors_input_layer, words_input_layer, task_input_layer, emotion_input_layer                          
 from EmotionalGrain import task_layer, colors_hidden_layer, words_hidden_layer, emotion_hidden_layer, response_layer
@@ -29,11 +31,11 @@ input_dict = {colors_input_layer: [0, 0, 0],
               task_input_layer: [0, 1, 0]} # NOTE: added extra emotion task input.
                 # I believe the 1 would indiciate what task is being done. With color first, word second, emotion third
                 # Similarly, I believe that the other inputs layers correspond to the condition (ex: negative, positive, congruent,incongruent)
-print("\n\n\n\n")
-print(Bidirectional_Stroop.run(inputs=input_dict))
+#print("\n\n\n\n")
+#print(Bidirectional_Stroop.run(inputs=input_dict))
 
-for node in Bidirectional_Stroop.mechanisms:
-    print(node.name, " Value: ", node.get_output_values(Bidirectional_Stroop))
+#for node in Bidirectional_Stroop.mechanisms:
+#    print(node.name, " Value: ", node.get_output_values(Bidirectional_Stroop))
 
 
 # # LOGGING:
@@ -96,6 +98,7 @@ emotion_colour_naming_stimuli = [[CN_initialize_input, CN_negative_trial_input],
                                 [CN_initialize_input, CN_neutral_trial_input],
                                 [CN_initialize_input, CN_positive_trial_input]]
 
+
 # Create third stimulus? Technically we would only have colour naming trials to begin with. So I guess a third stimulus except it would be a colour naming one with emotional words activated, but not the actual task node.
     # It would be like the control CN task, but instead the emotional words are used.
 conditions = 3
@@ -113,6 +116,8 @@ for cond in range(conditions):
     Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][0], num_trials=settle_trials)
 
     #change weights for experiment
+    #task_layer.parameters.function.set(pnl.Logistic(gain = 0.5), Bidirectional_Stroop)
+    task_layer.parameters.integration_rate.set(0.001, Bidirectional_Stroop)
     response_color_weights.parameters.matrix.set(colour_naming_exp['response_colour'], Bidirectional_Stroop)
     response_word_weights.parameters.matrix.set(colour_naming_exp['response_word'], Bidirectional_Stroop)
     response_emotion_weights.parameters.matrix.set(colour_naming_exp['response_emotion'], Bidirectional_Stroop)
@@ -122,12 +127,16 @@ for cond in range(conditions):
 
     # Store values from run -----------------------------------------------------------------------------------------------
     B_S = Bidirectional_Stroop.name
-    r = response_layer.log.nparray_dictionary('value')       # Log response output from special logistic function
+    r = response_layer.log.nparray_dictionary('value')      
     rr = r[B_S]['value']
+    print(rr)
     n_r = rr.shape[0]
-    rrr = rr.reshape(n_r, 2) # NOTE: I believe this stays the same, since the output should be the same, despite having 3 inputs now. 
-    response_colournaming.append(rrr)  # .shape[0])
-    response_colournaming2.append(rrr.shape[0]) # NOTE: I really wish I knew what was happening here. 
+    #print(n_r)
+    rrr = rr.reshape(n_r, 2) 
+    #print(rrr)
+ 
+    response_colournaming.append(rrr) 
+    response_colournaming2.append(rrr.shape[0]) 
 
     # Clear log & reset ----------------------------------------------------------------------------------------
     response_layer.log.clear_entries()
@@ -140,9 +149,10 @@ for cond in range(conditions):
     emotion_hidden_layer.reset([[0, 0, 0]])
     response_layer.reset([[0, 0]])
     task_layer.reset([[0, 0, 0]]) # NOTE: task layer reset needs 3 nodes now.
-    print('response_colournaming: ', response_colournaming)
-    print('first trials')
+    #print('response_colournaming: ', response_colournaming)
+    #print('first trials')
 
+"""
 # Run color naming trials ----------------------------------------------------------------------------------------------
 response_wordreading = []
 response_wordreading2 = []
@@ -186,6 +196,7 @@ for cond in range(conditions):
     print('response_wordreading: ', response_wordreading)
     print('got to second trials')
 
+"""
 # Run color naming with emotion ----------------------------------------------------------------------------------------------
 
 response_colouremotion = []
@@ -194,6 +205,7 @@ print('made the next responses')
 for cond in range(conditions):
     
     #re-initialize weights to response layer 
+    #task_layer.parameters.function.set(pnl.Logistic(gain = model_parameters['task_layer']['gain']), Bidirectional_Stroop)
     response_color_weights.parameters.matrix.set(exp_weights_reset['response_colour'], Bidirectional_Stroop)
     response_word_weights.parameters.matrix.set(exp_weights_reset['response_word'], Bidirectional_Stroop)
     response_emotion_weights.parameters.matrix.set(exp_weights_reset['response_emotion'], Bidirectional_Stroop)
@@ -201,7 +213,11 @@ for cond in range(conditions):
     #run baseline
     Bidirectional_Stroop.run(inputs=emotion_colour_naming_stimuli[cond][0], num_trials=settle_trials)
 
-    #change weights for experiment
+    #TEST PARAMETERS/SELECTION
+    #task_layer.parameters.function.set(pnl.Logistic(gain = 4), Bidirectional_Stroop)
+    #task_layer.parameters.hetero.set(-4, Bidirectional_Stroop)
+
+    #
     response_color_weights.parameters.matrix.set(colour_naming_exp['response_colour'], Bidirectional_Stroop)
     response_word_weights.parameters.matrix.set(colour_naming_exp['response_word'], Bidirectional_Stroop)
     response_emotion_weights.parameters.matrix.set(colour_naming_exp['response_emotion'], Bidirectional_Stroop)
@@ -236,20 +252,18 @@ print('now we plot')
 if args.enable_plot:
     import matplotlib.pyplot as plt
     # Plot results --------------------------------------------------------------------------------------------------------
-    plt.figure()
     reg = np.dot(response_colournaming2, 5) + 115
     reg2 = np.dot(response_colournaming2, 5) + 115
     print(response_colournaming2)
-    plt.figure()
 
+    plt.figure()
     plt.rcParams["font.family"] = "Times"
     plt.rcParams["font.size"] = 20
     #plt.rcParams['figure.figsize'] = [10,12]
     plt.bar(["Incongruent", "Congruent"], reg[1:3], color = "gray")
     plt.ylabel('Reaction Time (ms)')
-
     #plt.ylim([500, 1500])
-    plt.savefig("figures/standard_stroop/standard_TEST.png", dpi=300, bbox_inches="tight")
+    plt.savefig("figures/standard_stroop/standard_TEST_IR_0.001.png", dpi=300, bbox_inches="tight")
     plt.close()
 
     # Show emotional graph
@@ -261,5 +275,21 @@ if args.enable_plot:
     plt.ylabel('Reaction Time (ms)')
     #plt.ylim([500, 565])
     #plt.ylim([500, 1500])
-    plt.savefig("figures/emotion_stroop/emotional_TEST.png", dpi=300, bbox_inches="tight")
+    plt.savefig("figures/emotion_stroop/emotional_TEST_1.png", dpi=300, bbox_inches="tight")
     plt.close()
+
+    ## datasaving 
+    
+    simulation_data = {
+        'congruent': reg[2],
+        'incongruent': reg[1],
+        'negative': reg3[0],
+        'neutral': reg3[1],
+        'positive': reg3[2]
+    }
+
+    print(simulation_data)
+
+    df = pd.DataFrame(simulation_data, index=[0]) 
+
+    df.to_csv('simresults/baseline_IR_0.001.csv')

@@ -132,14 +132,14 @@ weights = {
     ]), 
 
     'colour_response' : np.array([
-        [1.5, 0.0],
-        [0.0, 1.5],
+        [1.5, 0.0], #[1.5, 0.0]
+        [0.0, 1.5], #[0.0, 1.5]
         [0.0, 0.0]
     ]), 
 
     'word_response' : np.array([
-        [2.5, 0.0], # this would be red to red. This would be red to green (so rows = own node, columns = task node... duh that's why it's 3x2)
-        [0.0, 2.5], # this would be green to green
+        [2.5, 0.0], 
+        [0.0, 2.5], 
         [0.0, 0.0]
     ]), 
 
@@ -183,8 +183,8 @@ colour_naming_exp = {
         ]), 
 
     'response_emotion': np.array([
-            [1.5, 0.0, 0.0],
-            [0.0, 1.5, 0.0]
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0]
         ]), 
 }
 

@@ -131,7 +131,7 @@ word_response_process_1 = pnl.Pathway(
 
 word_response_process_2 = pnl.Pathway(
     pathway=[
-        (response_layer, pnl.NodeRole.OUTPUT), # this is related to logging the output results... probably
+        response_layer, # this is related to logging the output results... probably
         response_word_weights,
         words_hidden_layer
     ],
@@ -145,12 +145,11 @@ emotion_response_process_1 = pnl.Pathway(
         emotion_input_weights,
         emotion_hidden_layer,
         emotion_response_weights,
-        response_layer # NOTE: there was a comma at the end here, but I removed it. See if model breaks
+        response_layer 
     ],
     name='EMOTION_RESPONSE_PROCESS_1'
 )
 
-# NOTE:
 emotion_response_process_2 = pnl.Pathway(
     pathway=[
         response_layer,
