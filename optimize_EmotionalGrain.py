@@ -72,7 +72,7 @@ def trial_dict(red_color, green_color, neutral_color, red_word, green_word, neut
 
 # Define initialization trials separately
 # order: red_color, green_color, neutral_color, red_word, green_word, neutral_word, positive_emotion, negative_emotion, neutral_emotion, CN, WR, EP
-CN_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+CN_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1)
 WR_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
 EP_initialize_input = trial_dict(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
 
@@ -115,18 +115,11 @@ class optimize_stroop(object):
         self.num_selected = num_selected
         self.mutation_rate = mutation_rate
         self.num_elites = 1
-        self.flag = str('pt-') + str((self.participant[0]+76)) + str('_cb-') + str(self.counterbalance[0]) + '-emw'
+        self.flag = str('pt-') + str((self.participant[0])) + str('_cb-') + str(self.counterbalance[0]) + '-emw-2' 
         self.minParamValues = []
         self.maxParamValues = []
         self.num_inputs = 13
         self.initialParams = []
-        #self.param = [colour_naming_exp['response_colour'][0,0], #baseline 1.5
-        #              colour_naming_exp['response_word'][0,0], #baseline 2.5
-         #             weights['colour_response'][0,0],
-         #             weights['word_response'][0,0]
-         #             ]
-        #self.sd = [0.5, 0.5, 0.5, 0.5]
-        #self.initialParams = [np.random.normal(self.param[i], self.sd[i]) for i in range(self.num_inputs)]
 
         self.plot_results()
 
@@ -154,7 +147,7 @@ class optimize_stroop(object):
             # Run color naming trials ----------------------------------------------------------------------------------------------
             conditions = 3
             response_colournaming = []
-            response_colournaming2 = [] #what is the point of this??
+            response_colournaming2 = [] 
             for cond in range(conditions):
 
                 #re-initialize weights to response layer 
@@ -179,7 +172,7 @@ class optimize_stroop(object):
 
                 #change weights for experiment
 
-                #THIS IS WHERE WE HAVE POTENTIAL FOR OPTIMIZATION!
+                #
                 colour_naming_exp['response_colour'][0,0] = cand[0]
                 colour_naming_exp['response_colour'][1,1] = cand[0]
                 colour_naming_exp['response_word'][0,0] = cand[1]
@@ -209,6 +202,7 @@ class optimize_stroop(object):
                 emotion_hidden_layer.parameters.function.set(pnl.Logistic(gain = cand[10], 
                                                                           x_0 = cand[11]), Bidirectional_Stroop)
                 emotion_hidden_layer.parameters.integration_rate.set(cand[12], Bidirectional_Stroop)
+
                 #run exp
                 Bidirectional_Stroop.run(inputs=colour_naming_stimuli[cond][1], termination_processing=terminate_trial)
 
@@ -247,8 +241,8 @@ class optimize_stroop(object):
             mse_diff = (diff - diff_sim) ** 2
 
             fitness = (0.3*mse_congruent + 0.3*mse_incongruent + 0.4*mse_diff) 
-            jokes = [data_incongruent, data_congruent] #indeed [rsv]
-            print('data:', jokes)
+            d = [data_incongruent, data_congruent] 
+            print('data:', d)
             print('simulation:', self.scaledrt[1:3])
             print('fitness:', fitness)
             print('iteration:', iteration)
@@ -333,7 +327,7 @@ class optimize_stroop(object):
         print(optparams)
         conditions = 3
         response_colournaming = []
-        response_colournaming2 = [] #what is the point of this??
+        response_colournaming2 = [] 
         for cond in range(conditions):
 
                  #re-initialize weights to response layer 
@@ -457,5 +451,7 @@ class optimize_stroop(object):
 
 
 
-for p in range(n_participants):
-    optimize_stroop(standard_wdelay, 2, p, max_evaluations=180)
+#for p in range(n_participants):
+missing = [26, 27, 28]
+for p in missing:
+    optimize_stroop(standard, 1, p, max_evaluations=180)
